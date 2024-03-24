@@ -185,7 +185,7 @@ ListOfPixels arrListOfPixels[2] = {
     {NULL, NULL, 0},
     {NULL, NULL, 0}};
 
-int main(void)
+int main()
 {
    dma->back_buffer = &Buffer2;
    // Black out screen initially
