@@ -6057,44 +6057,6 @@ void pushPixel(Pixel p)
    arrListOfPixels[buff].count++;
 }
 
-void initMouse()
-{
-   // Reset mouse
-   ps2->data = 0xff;
-
-   // // Initialize mouse
-   // char byte1 = 0;
-   // char byte2 = 0;
-   // char byte3 = 0;
-
-   /*
-      int mouse_data;
-      int rvalid;
-
-      while (1)
-      {
-         mouse_data = ps2->data;
-         rvalid = mouse_data & 0x8000;
-
-         // printf("%x\n", mouse_data);
-         if (rvalid)
-         {
-            byte1 = byte2;
-            byte2 = byte3;
-            byte3 = mouse_data & 0xff;
-
-            // printf("%x, %x, %x\n", byte3, byte2, byte1);
-
-            if (byte3 == (char)0xAA)
-            { // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
-               ps2->data = 0xf4;
-               byte3 = ps2->data;
-               return;
-            }
-         }
-      }
-      */
-}
 
 int processMouse()
 {
