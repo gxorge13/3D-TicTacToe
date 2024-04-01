@@ -6565,6 +6565,8 @@ enum WinnerState
 };
 
 enum WinnerState winnerState = noWinner;
+
+void displayEnd();
 ////////////////////////////////////////////////////////////////////////
 // Mouse data
 void initMouse();
@@ -6650,7 +6652,7 @@ short int BG = 0x9306;
 ListOfPixels arrListOfPixels[2] = {
     {NULL, NULL, 0},
     {NULL, NULL, 0}};
-
+////////////////////////////////////////////////////////////////////
 int main(void)
 {
    cells_xRot[0] = cells_xRot[4] = cells_xRot[5] = 0;
@@ -6706,7 +6708,7 @@ int main(void)
       // printf("%d\n", mouse.left);
 
       // See function for detail
-      updateState();
+      updateState(); 
 
       // Draws mouse to screen
       savePixels = 1;
@@ -6715,21 +6717,22 @@ int main(void)
       // Outputs sound in buffer
       outputSounds();
 
-      if (winnerState == redWinner)
-      {
-         printf("red wins\n");
-         winnerState = noWinner;
-      }
-      if (winnerState == blueWinner)
-      {
-         printf("blue wins\n");
-         winnerState = noWinner;
-      }
-      if (winnerState == tie)
-      {
-         printf("tie\n");
-         winnerState = noWinner;
-      }
+      displayEnd();
+      // if (winnerState == redWinner)
+      // {
+      //    printf("red wins\n");
+      //    winnerState = noWinner;
+      // }
+      // if (winnerState == blueWinner)
+      // {
+      //    printf("blue wins\n");
+      //    winnerState = noWinner;
+      // }
+      // if (winnerState == tie)
+      // {
+      //    printf("tie\n");
+      //    winnerState = noWinner;
+      // }
 
       // Chnage buffer
       if (buff == 1)
@@ -6829,7 +6832,7 @@ void newState()
       }
       break;
    case TWO_PLAYER:
-      BG = 0x9306;
+      BG = 0x9306; //dark orange
 
       // Set 2d grid (cells_normal) data
       for (int r = 0; r < 3; r++)
@@ -6843,7 +6846,7 @@ void newState()
             cells_normal[r][c].center.y = cells_normal[r][c].offsety + cells_normal[r][c].height / 2;
             cells_normal[r][c].redraw = 2;
             cells_normal[r][c].occupied = '-';
-            cells_normal[r][c].clr = 0xef3b;
+            cells_normal[r][c].clr = 0xef3b; //light blue
             cells_normal[r][c].pieceDrawX = 0;
             cells_normal[r][c].pieceDrawY = 0;
             cells_normal[r][c].fCount = 0;
@@ -7386,6 +7389,11 @@ void checkWinner()
       winnerState = tie;
 }
 
+void displayEnd() {
+   if (winnerState == noWinner) return;
+
+   //create a system that can go between different modes (from main to end to main again etc)
+}
 void placePiece()
 {
    int x = mouse.position.x;
