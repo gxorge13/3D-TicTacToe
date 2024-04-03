@@ -6708,7 +6708,7 @@ int main(void)
       // printf("%d\n", mouse.left);
 
       // See function for detail
-      updateState(); 
+      updateState();
 
       // Draws mouse to screen
       savePixels = 1;
@@ -6757,6 +6757,7 @@ int main(void)
    }
 }
 
+// initializes and ensures everything is safe to use
 void initState()
 {
    resetMouse();
@@ -6780,9 +6781,10 @@ void initState()
    wait_vsync();
 
    newState();
-   wait_vsync();
+   wait_vsync(); // draw on both buffers
 }
 
+// based on "gamestate",
 void newState()
 {
    Point c = {320 / 2, 240 / 2};
@@ -6832,7 +6834,7 @@ void newState()
       }
       break;
    case TWO_PLAYER:
-      BG = 0x9306; //dark orange
+      BG = 0x9306; // dark orange
 
       // Set 2d grid (cells_normal) data
       for (int r = 0; r < 3; r++)
@@ -6846,7 +6848,7 @@ void newState()
             cells_normal[r][c].center.y = cells_normal[r][c].offsety + cells_normal[r][c].height / 2;
             cells_normal[r][c].redraw = 2;
             cells_normal[r][c].occupied = '-';
-            cells_normal[r][c].clr = 0xef3b; //light blue
+            cells_normal[r][c].clr = 0xef3b; // light blue
             cells_normal[r][c].pieceDrawX = 0;
             cells_normal[r][c].pieceDrawY = 0;
             cells_normal[r][c].fCount = 0;
@@ -7389,10 +7391,12 @@ void checkWinner()
       winnerState = tie;
 }
 
-void displayEnd() {
-   if (winnerState == noWinner) return;
+void displayEnd()
+{
+   if (winnerState == noWinner)
+      return;
 
-   //create a system that can go between different modes (from main to end to main again etc)
+   // create a system that can go between different modes (from main to end to main again etc)
 }
 void placePiece()
 {
