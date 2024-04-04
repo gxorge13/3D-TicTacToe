@@ -8780,7 +8780,7 @@ void storePS2Data()
       mouse.byte3 = data & 0xff;
       printf("%x %x %x \n", mouse.byte1, mouse.byte2, mouse.byte3);
 
-      if (mouse.byte2 == (char)0xAA  && mouse.byte3 == (char)0x00)
+      if (mouse.byte2 == (char)0xAA)//UNCOMMENT WHEN RUNNING ON DE1-SOC //  && mouse.byte3 == (char)0x00)
       {                              // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
          ps2->data = 0xf4;
          mouse.inInit = 0;
