@@ -6720,21 +6720,21 @@ int main(void)
       outputSounds();
 
       displayEnd();
-      // if (winnerState == redWinner)
-      // {
-      //    printf("red wins\n");
-      //    winnerState = noWinner;
-      // }
-      // if (winnerState == blueWinner)
-      // {
-      //    printf("blue wins\n");
-      //    winnerState = noWinner;
-      // }
-      // if (winnerState == tie)
-      // {
-      //    printf("tie\n");
-      //    winnerState = noWinner;
-      // }
+      if (winnerState == redWinner)
+      {
+         printf("red wins\n");
+         winnerState = noWinner;
+      }
+      if (winnerState == blueWinner)
+      {
+         printf("blue wins\n");
+         winnerState = noWinner;
+      }
+      if (winnerState == tie)
+      {
+         printf("tie\n");
+         winnerState = noWinner;
+      }
 
       // Chnage buffer
       if (buff == 1)
@@ -6773,7 +6773,7 @@ void initState()
    wait_vsync(); // draw on both buffers
 }
 
-// based on "gamestate",
+// based on "gamestate", draws the background image
 void newState()
 {
    Point c = {320 / 2, 240 / 2};
@@ -6853,7 +6853,7 @@ void newState()
       }
       break;
    case END:
-   
+
    default:
       break;
    }
@@ -7189,59 +7189,59 @@ void updateState()
 
                if (cell->redraw > 0 || extraCtrl.redraw > 0)
                {
-               // if (extraCtrl.redraw > 0)
-               // {
+                  // if (extraCtrl.redraw > 0)
+                  // {
                   short clr = cell->clr;
 
                   if (cell->mappedPoints[1].x - cell->mappedPoints[0].x != 0 && cell->mappedPoints[2].x - cell->mappedPoints[3].x != 0)
                   {
                      if (cell->occupied != '-' && extraCtrl.redraw && !mouse.left)
                      {
-                       /* for (int y = minY; y <= maxY; y++)
-                        {
-                           // Check left side
-                           for (int x = (minX + maxX) / 2; x > minX; x--)
-                           {
-                              int i, j;
-                              char found = 0;
-                              for (i = 0, j = 3; i < 4; j = i++)
-                              {
-                                 if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
-                                     (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
-                                    found = !found;
-                              }
+                        /* for (int y = minY; y <= maxY; y++)
+                         {
+                            // Check left side
+                            for (int x = (minX + maxX) / 2; x > minX; x--)
+                            {
+                               int i, j;
+                               char found = 0;
+                               for (i = 0, j = 3; i < 4; j = i++)
+                               {
+                                  if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
+                                      (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
+                                     found = !found;
+                               }
 
-                              // If miss, then all other points will also miss
-                              if (!found)
-                                 break;
-                              plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
-                           }
+                               // If miss, then all other points will also miss
+                               if (!found)
+                                  break;
+                               plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                            }
 
-                           // Check right side
-                           for (int x = (minX + maxX) / 2; x < maxX; x++)
-                           {
-                              int i, j;
-                              char found = 0;
-                              for (i = 0, j = 3; i < 4; j = i++)
-                              {
-                                 if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
-                                     (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
-                                    found = !found;
-                              }
+                            // Check right side
+                            for (int x = (minX + maxX) / 2; x < maxX; x++)
+                            {
+                               int i, j;
+                               char found = 0;
+                               for (i = 0, j = 3; i < 4; j = i++)
+                               {
+                                  if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
+                                      (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
+                                     found = !found;
+                               }
 
-                              // If miss, then all other points will also miss
-                              if (!found)
-                                 break;
-                              plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
-                           }
-                        }
-                        */
+                               // If miss, then all other points will also miss
+                               if (!found)
+                                  break;
+                               plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                            }
+                         }
+                         */
 
-                       draw_line(cell->mappedPoints[0], cell->mappedPoints[2], cell->occupied == 'x' ? 0xa903 : 0x1b95);
-                       draw_line(cell->mappedPoints[1], cell->mappedPoints[3], cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                        draw_line(cell->mappedPoints[0], cell->mappedPoints[2], cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                        draw_line(cell->mappedPoints[1], cell->mappedPoints[3], cell->occupied == 'x' ? 0xa903 : 0x1b95);
                      }
                   }
-               // }
+                  // }
 
                   for (int i = 1; i <= 4; i++)
                   {
@@ -7432,8 +7432,9 @@ int checkWinner(struct cell grid[3][3], char val)
    int x = mouse.position.x;
    int y = mouse.position.y;
 
-   // int c = (x - CELLS_X_START) / 50;
-   // int r = (y - CELLS_Y_START) / 50;
+   // finds which box was placed
+   //  int c = (x - CELLS_X_START) / 50;
+   //  int r = (y - CELLS_Y_START) / 50;
 
    int winner = blueWinner;
    if (val == 'x')
@@ -7441,9 +7442,14 @@ int checkWinner(struct cell grid[3][3], char val)
       winner = redWinner;
    }
 
-   // Check row or collumn
-   // if ((grid[r][(c + 1) % 3].occupied == turn && grid[r][(c + 2) % 3].occupied == turn) ||
-   //     (grid[(r + 1) % 3][c].occupied == turn && grid[(r + 2) % 3][c].occupied == turn))
+   // Check row or collumn // used for which piece was placed
+   // if ((grid[r][(c + 1) % 3].occupied == turn &&
+   //      grid[r][(c + 2) % 3].occupied == turn &&
+   //      grid[r][(c + 3) % 3].occupied == turn) ||
+
+   //     (grid[(r + 1) % 3][c].occupied == turn &&
+   //      grid[(r + 2) % 3][c].occupied == turn &&
+   //      grid[(r + 3) % 3][c].occupied == turn))
    // {
    //    winnerState = winner;
    //    return winner;
@@ -7491,24 +7497,32 @@ int checkWinner(struct cell grid[3][3], char val)
 
    char posDiag = 1, negDiag = 1;
 
-   for (int i = 0; i < 3; i++) {
+   for (int i = 0; i < 3; i++)
+   {
       if (grid[i][i].occupied != val)
          negDiag = 0;
 
-      if (grid[2-i][i].occupied != val)
+      if (grid[2 - i][i].occupied != val)
          posDiag = 0;
    }
 
-   if (posDiag || negDiag) {
+   if (posDiag || negDiag)
+   {
       winnerState = winner;
       return winner;
    }
 
-   // Check either diagonal
-   // if ((r == c && grid[(r + 1) % 3][(c + 1) % 3].occupied == turn && grid[(r + 2) % 3][(c + 2) % 3].occupied == turn) ||
+   // // Check either diagonal
+   // if ((r == c && //ex 0 , 0
+   //      grid[(r) % 3][(c) % 3].occupied == turn         && // 0, 0
+   //      grid[(r + 1) % 3][(c + 1) % 3].occupied == turn && // 1, 1
+   //      grid[(r + 2) % 3][(c + 2) % 3].occupied == turn) ||// 2, 2
    //     // checks top left to bottom right
 
-   //     (r + c == 2 && grid[(r + 1) % 3][(c + 2) % 3].occupied == turn && grid[(r + 2) % 3][(c + 1) % 3].occupied == turn))
+   //     (/*r + c == 2 &&*/ //ex: 2 , 0
+   //      grid[(r + 1) % 3][(c + 2) % 3].occupied == turn && // 0, 2
+   //      grid[(r + 2) % 3][(c + 1) % 3].occupied == turn && // 1, 1
+   //      grid[(r) % 3][(c) % 3].occupied == turn)) //2, 0
    // // checks top right to bottom left
    // {
    //    winnerState = winner;
@@ -7547,6 +7561,7 @@ void displayEnd()
 
    // create a system that can go between different modes (from main to end to main again etc)
 }
+
 void placePiece()
 {
    int x = mouse.position.x;
@@ -8637,10 +8652,12 @@ int processMouse()
       }
       else if (mouse.left)
       {
-         if (abs(mouse.xTravel) < 10 && abs(mouse.yTravel) < 10) {
+         if (abs(mouse.xTravel) < 10 && abs(mouse.yTravel) < 10)
+         {
             mouse.wasLeft = 1;
 
-            if (gameState == MODE_3D) {
+            if (gameState == MODE_3D)
+            {
                extraCtrl.redraw = 2;
             }
          }
@@ -8679,44 +8696,47 @@ void storePS2Data()
       mouse.byte3 = data & 0xff;
       printf("%x %x %x \n", mouse.byte1, mouse.byte2, mouse.byte3);
 
-      if (mouse.byte2 == (char)0xAA)//  && mouse.byte3 == (char)0x00)
-      { // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
+      if (mouse.byte2 == (char)0xAA) //  && mouse.byte3 == (char)0x00)
+      {                              // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
          ps2->data = 0xf4;
          mouse.inInit = 0;
          printf("Mouse init complete");
          // mouse.byte3 = ps2->data;
          mouse.packetsRecieved = 0;
       }
-      return;  
+      return;
    }
 
-   if (!(data & 0x8000))// || (char)(data & 0xff) == (char)0xfa)
+   if (!(data & 0x8000)) // || (char)(data & 0xff) == (char)0xfa)
       return 0;
 
    // if (mouse.packetsRecieved == 0 && (data & 0xff) & 0x8 != 1)
    //    return;
 
-   if (mouseDataIdx < 999) {
+   if (mouseDataIdx < 999)
+   {
       mouse.packetsRecieved++;
-      switch (mouse.packetsRecieved) {
-         case 1:
-            // mouseData[mouseDataIdx+1].byte1 = data & 0xff;
-            mouse.byte1 = data & 0xff;
-            break;
-         case 2:
-            // mouseData[mouseDataIdx+1].byte2 = data & 0xff;
-            mouse.byte2 = data & 0xff;
-            break;
-         case 3:
-            // mouseData[mouseDataIdx+1].byte3 = data & 0xff;
-            mouse.byte3 = data & 0xff;
+      switch (mouse.packetsRecieved)
+      {
+      case 1:
+         // mouseData[mouseDataIdx+1].byte1 = data & 0xff;
+         mouse.byte1 = data & 0xff;
+         break;
+      case 2:
+         // mouseData[mouseDataIdx+1].byte2 = data & 0xff;
+         mouse.byte2 = data & 0xff;
+         break;
+      case 3:
+         // mouseData[mouseDataIdx+1].byte3 = data & 0xff;
+         mouse.byte3 = data & 0xff;
          break;
       }
    }
 
    // printf("%d: %d - %x\n", mouseDataIdx+1, mouse.packetsRecieved,  data & 0xff);
 
-   if (mouse.packetsRecieved == 3) {
+   if (mouse.packetsRecieved == 3)
+   {
       mouse.packetsRecieved = 0;
       mouseDataIdx++;
 
@@ -8725,9 +8745,8 @@ void storePS2Data()
       mouseData[mouseDataIdx].byte3 = mouse.byte3;
 
       mouse.byte1 = mouse.byte2 = mouse.byte3 = 0;
-   } 
-   
-   
+   }
+
    // mouseDataIdx++;
    // mouse.packetsRecieved = 0;
    // mouse.byte1 = mouse.byte2 = mouse.byte3 = 0;
