@@ -6445,7 +6445,7 @@ void outputSounds();
 enum GameStates
 {
    START,
-   EXTRA,
+   MODE_3D,
    TWO_PLAYER,
    END
 };
@@ -6555,7 +6555,7 @@ void draw_image(Point p, const short *image, int cx, int cy, int width, int heig
 void wait_vsync();
 ////////////////////////////////////////////////////////////////////////
 // Winning Conditions
-void checkWinner();
+int checkWinner(struct cell grid[3][3], char val);
 enum WinnerState
 {
    noWinner = 0,
@@ -6578,7 +6578,7 @@ void clearMouseFIFO();
 struct MouseData
 {
    char byte1, byte2, byte3
-} mouseData[64];
+} mouseData[1000];
 int mouseDataIdx = -1;
 
 struct mouse
@@ -6626,21 +6626,22 @@ void swap(int *a, int *b)
    *a = temp;
 }
 ////////////////////////////////////////////////////////////////////////
-// Functions for EXTRA GameMode
+// Functions for MODE_3D GameMode
 struct EXTRA_CTRL
 {
    char redraw;
    char drawOrder[6];
    float xRot, yRot;
-} extraCtrl = {2, {0, 1, 2, 3, 4, 5}};
+   char faceDone[6];
+} extraCtrl = {2, {0, 1, 2, 3, 4, 5}, 0, 0, {0, 0, 0, 0, 0, 0}};
 
 Point projectToScreen(Point p);
 Point rotatePoint(Point p, float yaw, float roll, float pitch);
 Point relToOrigin(Point p);
 Point mapPoint(Point p, float yaw, float roll, float pitch);
 float dotProduct(Point vec1, Point vec2);
-void placePieceID(struct cell *cell);
-void highlightNeighbours(int face, int row, int col, char highlight);
+void placePieceID(int face, struct cell grid[3][3], struct cell *cell);
+void highlightNeighbours(int face, int row, int col, char highlight); //, struct cell ***active);
 void setNeighbours(int face, int row, int col, char val);
 Point rotateAboutAxis(Point p, Point rotationAxis, float angle);
 
@@ -6705,10 +6706,11 @@ int main(void)
    while (1)
    {
       clear_screen();
+      processMouse();
       // printf("%d\n", mouse.left);
 
       // See function for detail
-      updateState(); 
+      updateState();
 
       // Draws mouse to screen
       savePixels = 1;
@@ -6739,21 +6741,8 @@ int main(void)
          buff = 0;
       else
          buff = 1;
+
       wait_vsync();
-
-      if (gameState == EXTRA)
-      {
-         for (int f = 0; f < 6; f++)
-         {
-            for (int row = 0; row < 3; row++)
-            {
-               for (int col = 0; col < 3; col++)
-                  cells3D[f][row][col].redraw--;
-            }
-         }
-      }
-
-      processMouse();
    }
 }
 
@@ -6791,8 +6780,8 @@ void newState()
    case START:
       draw_image(c, start_screen, WIDTH, HEIGHT, WIDTH, HEIGHT);
       break;
-   case EXTRA:
-      BG = 0xd65b;
+   case MODE_3D:
+      BG = 0x8d70;
 
       // Set 3d grid (cells_normal) data
       for (int f = 0; f < 6; f++)
@@ -6832,7 +6821,7 @@ void newState()
       }
       break;
    case TWO_PLAYER:
-      BG = 0x9306; //dark orange
+      BG = 0x9306; // dark orange
 
       // Set 2d grid (cells_normal) data
       for (int r = 0; r < 3; r++)
@@ -6846,7 +6835,7 @@ void newState()
             cells_normal[r][c].center.y = cells_normal[r][c].offsety + cells_normal[r][c].height / 2;
             cells_normal[r][c].redraw = 2;
             cells_normal[r][c].occupied = '-';
-            cells_normal[r][c].clr = 0xef3b; //light blue
+            cells_normal[r][c].clr = 0xef3b; // light blue
             cells_normal[r][c].pieceDrawX = 0;
             cells_normal[r][c].pieceDrawY = 0;
             cells_normal[r][c].fCount = 0;
@@ -6913,7 +6902,7 @@ void updateState()
 
          if (mouse.wasLeft)
          {
-            gameState = EXTRA;
+            gameState = MODE_3D;
             initState();
             return;
          }
@@ -6977,7 +6966,7 @@ void updateState()
 
       savePixels = 1;
       break;
-   case EXTRA:
+   case MODE_3D:
       savePixels = 0;
       int numFaces = 6;
 
@@ -7074,10 +7063,17 @@ void updateState()
 
       if (extraCtrl.redraw)
       {
-         memset((void *)dma->back_buffer, BG, 512 * 480);
+         for (int x = 0; x < WIDTH; x++)
+         {
+            for (int y = 0; y < HEIGHT; y++)
+            {
+               clear_pixel(x, y, BG);
+            }
+         }
       }
 
-      for (int f = 0; f < 3; f++)
+      struct cell *active[3] = {NULL, NULL, NULL};
+      for (int f = 2; f >= 0; f--)
       {
          for (int r = 0; r < 3; r++)
          {
@@ -7137,54 +7133,71 @@ void updateState()
                      mouseHover = !mouseHover;
                }
 
-               if (mouseHover)
+               if (!extraCtrl.faceDone[extraCtrl.drawOrder[f]])
                {
-                  cell->isHovered = 1;
-                  cell->initiatedHover = 1;
+                  if (mouseHover)
+                  {
+                     // printf("%d, %d, %d \n", f, r, c);
+                     active[0] = cell;
 
-                  highlightNeighbours(extraCtrl.drawOrder[f], r, c, 1);
-               }
-               else if (cell->initiatedHover)
-               {
-                  cell->isHovered = 0;
-                  highlightNeighbours(extraCtrl.drawOrder[f], r, c, 0);
-                  cell->initiatedHover = 0;
-               }
+                     cell->isHovered = 1;
+                     cell->initiatedHover = 1;
 
-               if (cell->isHovered)
-               {
-                  clr = cell->occupied != '-' ? 0xce37 : turn == 'x' ? 0xf470
-                                                                     : 0x7577; // 0xce37;
+                     highlightNeighbours(extraCtrl.drawOrder[f], r, c, 1); //, &active);
+                  }
+                  else if (cell->initiatedHover)
+                  {
+                     active[0] = cell;
+                     cell->isHovered = 0;
+                     highlightNeighbours(extraCtrl.drawOrder[f], r, c, 0); //, &active);
+                     cell->initiatedHover = 0;
+                  }
 
-                  if (cell->clr != clr)
+                  if (cell->isHovered)
+                  {
+                     clr = cell->occupied != '-' ? 0xce37 : turn == 'x' ? 0xf470
+                                                                        : 0x7577; // 0xce37;
+
+                     if (cell->clr != clr)
+                     {
+                        cell->clr = clr;
+                        cell->redraw = 2;
+                     }
+
+                     if (cell->initiatedHover && mouse.wasLeft && cell->occupied == '-')
+                     {
+                        setNeighbours(extraCtrl.drawOrder[f], r, c, turn);
+
+                        placePieceID(extraCtrl.drawOrder[f], cells3D[f], cell);
+                        int winner = checkWinner(cells3D[extraCtrl.drawOrder[f]], cell->occupied);
+
+                        if (extraCtrl.faceDone[extraCtrl.drawOrder[f]] == 0 && winner != noWinner)
+                        {
+                           extraCtrl.faceDone[extraCtrl.drawOrder[f]] = cell->occupied;
+                        }
+                     }
+                  }
+                  else if (clr != cell->clr)
                   {
                      cell->clr = clr;
                      cell->redraw = 2;
                   }
-
-                  if (cell->initiatedHover && mouse.wasLeft && cell->occupied == '-')
-                  {
-                     placePieceID(cell);
-                     setNeighbours(extraCtrl.drawOrder[f], r, c, cell->occupied);
-                  }
-               }
-               else if (clr != cell->clr)
-               {
-                  cell->clr = clr;
-                  cell->redraw = 2;
                }
 
                if (cell->redraw > 0 || extraCtrl.redraw > 0)
                {
+               // if (extraCtrl.redraw > 0)
+               // {
                   short clr = cell->clr;
 
                   if (cell->mappedPoints[1].x - cell->mappedPoints[0].x != 0 && cell->mappedPoints[2].x - cell->mappedPoints[3].x != 0)
                   {
                      if (cell->occupied != '-' && extraCtrl.redraw && !mouse.left)
                      {
-                        for (int x = minX; x <= maxX; x++)
+                       /* for (int y = minY; y <= maxY; y++)
                         {
-                           for (int y = minY; y <= maxY; y++)
+                           // Check left side
+                           for (int x = (minX + maxX) / 2; x > minX; x--)
                            {
                               int i, j;
                               char found = 0;
@@ -7195,17 +7208,45 @@ void updateState()
                                     found = !found;
                               }
 
+                              // If miss, then all other points will also miss
                               if (!found)
-                                 continue;
+                                 break;
+                              plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                           }
+
+                           // Check right side
+                           for (int x = (minX + maxX) / 2; x < maxX; x++)
+                           {
+                              int i, j;
+                              char found = 0;
+                              for (i = 0, j = 3; i < 4; j = i++)
+                              {
+                                 if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
+                                     (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
+                                    found = !found;
+                              }
+
+                              // If miss, then all other points will also miss
+                              if (!found)
+                                 break;
                               plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
                            }
                         }
+                        */
+
+                       draw_line(cell->mappedPoints[0], cell->mappedPoints[2], cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                       draw_line(cell->mappedPoints[1], cell->mappedPoints[3], cell->occupied == 'x' ? 0xa903 : 0x1b95);
                      }
+                  }
+               // }
 
-                     for (int i = 1; i <= 4; i++)
+                  for (int i = 1; i <= 4; i++)
+                  {
+
+                     short lclr = 0xffff;
+
+                     if (!extraCtrl.faceDone[extraCtrl.drawOrder[f]])
                      {
-                        short lclr = 0xffff;
-
                         if (!mouse.left)
                         {
                            if (cell->isHovered)
@@ -7218,24 +7259,70 @@ void updateState()
 
                            if (cell->occupied != '-')
                            {
-                              lclr = 0x9c0e;
+                              lclr = 0x0000;
                            }
                         }
                         else if (cell->occupied != '-')
                         {
                            lclr = cell->occupied == 'x' ? 0xa903 : 0x1b95;
                         }
-
-                        draw_line(cell->mappedPoints[(i - 1) % 4], cell->mappedPoints[i % 4], lclr);
                      }
+                     else
+                     {
+                        lclr = extraCtrl.faceDone[extraCtrl.drawOrder[f]] == 'x' ? 0xa903 : 0x1b95;
+                     }
+
+                     draw_line(cell->mappedPoints[(i - 1) % 4], cell->mappedPoints[i % 4], lclr);
                   }
 
-                  // cell->redraw--;
+                  cell->redraw--;
                }
             }
          }
       }
 
+      /*
+            for (int i = 0; i < 3; i++)
+            {
+               printf("%p\n", active[i]);
+               if (active[i] == NULL)
+                  continue;
+
+
+               struct cell *cell = active[i];
+
+               printf("(%f, %f, %f)\n", cell->mappedPoints[0].x, cell->mappedPoints[0].y, cell->mappedPoints[0].z);
+
+               if (cell->redraw > 0 || extraCtrl.redraw > 0)
+               {
+                  for (int i = 1; i <= 4; i++)
+                  {
+                     short lclr = 0xffff;
+
+                     if (!mouse.left)
+                     {
+                        if (turn == 'x')
+                           lclr = 0xa903;
+                        else
+                           lclr = 0x1b95;
+
+                        if (cell->occupied != '-')
+                        {
+                           lclr = 0x9c0e;
+                        }
+                     }
+                     else if (cell->occupied != '-')
+                     {
+                        lclr = cell->occupied == 'x' ? 0xa903 : 0x1b95;
+                     }
+
+                     draw_line(cell->mappedPoints[(i - 1) % 4], cell->mappedPoints[i % 4], lclr);
+                  }
+
+                  cell->redraw--;
+               }
+            }
+            */
       if (extraCtrl.redraw && !mouse.left)
          extraCtrl.redraw--;
       break;
@@ -7337,62 +7424,125 @@ void draw_cells()
    }
 }
 
-void checkWinner()
+int checkWinner(struct cell grid[3][3], char val)
 {
    int x = mouse.position.x;
    int y = mouse.position.y;
 
-   int c = (x - CELLS_X_START) / 50;
-   int r = (y - CELLS_Y_START) / 50;
+   // int c = (x - CELLS_X_START) / 50;
+   // int r = (y - CELLS_Y_START) / 50;
 
-   int winner = 2;
-   if (turn == 'x')
+   int winner = blueWinner;
+   if (val == 'x')
    {
-      winner = 1;
+      winner = redWinner;
    }
 
    // Check row or collumn
-   if ((cells_normal[r][(c + 1) % 3].occupied == turn && cells_normal[r][(c + 2) % 3].occupied == turn) ||
-       (cells_normal[(r + 1) % 3][c].occupied == turn && cells_normal[(r + 2) % 3][c].occupied == turn))
+   // if ((grid[r][(c + 1) % 3].occupied == turn && grid[r][(c + 2) % 3].occupied == turn) ||
+   //     (grid[(r + 1) % 3][c].occupied == turn && grid[(r + 2) % 3][c].occupied == turn))
+   // {
+   //    winnerState = winner;
+   //    return winner;
+   // }
+
+   for (int c = 0; c < 3; c++)
    {
+      char foundWon = 1;
+
+      for (int r = 0; r < 3; r++)
+      {
+         if (grid[r][c].occupied != val)
+         {
+            foundWon = 0;
+            break;
+         }
+      }
+
+      if (foundWon)
+      {
+         winnerState = winner;
+         return winner;
+      }
+   }
+
+   for (int r = 0; r < 3; r++)
+   {
+      char foundWon = 1;
+
+      for (int c = 0; c < 3; c++)
+      {
+         if (grid[r][c].occupied != val)
+         {
+            foundWon = 0;
+            break;
+         }
+      }
+
+      if (foundWon)
+      {
+         winnerState = winner;
+         return winner;
+      }
+   }
+
+   char posDiag = 1, negDiag = 1;
+
+   for (int i = 0; i < 3; i++) {
+      if (grid[i][i].occupied != val)
+         negDiag = 0;
+
+      if (grid[2-i][i].occupied != val)
+         posDiag = 0;
+   }
+
+   if (posDiag || negDiag) {
       winnerState = winner;
-      return;
+      return winner;
    }
 
    // Check either diagonal
-   if ((r == c && cells_normal[(r + 1) % 3][(c + 1) % 3].occupied == turn && cells_normal[(r + 2) % 3][(c + 2) % 3].occupied == turn) ||
-       // checks top left to bottom right
+   // if ((r == c && grid[(r + 1) % 3][(c + 1) % 3].occupied == turn && grid[(r + 2) % 3][(c + 2) % 3].occupied == turn) ||
+   //     // checks top left to bottom right
 
-       (r + c == 2 && cells_normal[(r + 1) % 3][(c + 2) % 3].occupied == turn && cells_normal[(r + 2) % 3][(c + 1) % 3].occupied == turn))
-   // checks top right to bottom left
-   {
-      winnerState = winner;
-      return;
-   }
+   //     (r + c == 2 && grid[(r + 1) % 3][(c + 2) % 3].occupied == turn && grid[(r + 2) % 3][(c + 1) % 3].occupied == turn))
+   // // checks top right to bottom left
+   // {
+   //    winnerState = winner;
+   //    return winner;
+   // }
 
    // if no winner, check tie
    int isTie = 1;
-   for (int i = 0; i < 3; i++)
+   for (int i = 0; i < 3 && isTie; i++, printf("\n"))
    {
       for (int j = 0; j < 3; j++)
       {
-         if (cells_normal[i][j].occupied == '-')
+         printf("%c ", grid[i][j].occupied);
+         if (grid[i][j].occupied == '-')
          { // if any are empty, no tie
             isTie = 0;
             break;
          }
       }
-      if (!isTie)
-         break;
    }
+
    if (isTie)
+   {
       winnerState = tie;
+      return tie;
+   }
+
+   winnerState = noWinner;
+   return noWinner;
 }
 
-void displayEnd() {
-   if (winnerState == noWinner) return;
+void displayEnd()
+{
+   if (winnerState == noWinner)
+      return;
 
-   //create a system that can go between different modes (from main to end to main again etc)
+   // create a system that can go between different modes (from main to end to main again etc)
 }
 void placePiece()
 {
@@ -7409,7 +7559,7 @@ void placePiece()
    if (cells_normal[r][c].occupied != '-')
       return;
 
-   placePieceID(&cells_normal[r][c]);
+   placePieceID(0, cells_normal, &cells_normal[r][c]);
 }
 
 void draw_square(Point p, int width, int height, short clr)
@@ -7728,13 +7878,18 @@ Point mapPoint(Point p, float yaw, float roll, float pitch)
    return projected;
 }
 
-void placePieceID(struct cell *cell)
+void placePieceID(int face, struct cell grid[3][3], struct cell *cell)
 {
    cell->occupied = turn;
 
    cell->redraw = 2;
 
-   checkWinner();
+   int winner = checkWinner(grid, turn);
+
+   if (gameState == MODE_3D && winner != noWinner)
+   {
+      extraCtrl.faceDone[face] = turn;
+   }
 
    if (turn == 'x')
       turn = 'o';
@@ -7749,7 +7904,7 @@ void placePieceID(struct cell *cell)
    }
 }
 
-void highlightNeighbours(int face, int row, int col, char highlight)
+void highlightNeighbours(int face, int row, int col, char highlight) //, struct cell ***active)
 {
    // // Do right side
    // if (col == 2)
@@ -7978,24 +8133,28 @@ void highlightNeighbours(int face, int row, int col, char highlight)
    {
       cells3D[leftFace][leftRow][leftCol].isHovered = highlight;
       cells3D[leftFace][leftRow][leftCol].redraw = 2;
+      // *(*active + 1) = &cells3D[leftFace][leftRow][leftCol];
    }
 
    if (rightRow != -1)
    {
       cells3D[rightFace][rightRow][rightCol].isHovered = highlight;
       cells3D[rightFace][rightRow][rightCol].redraw = 2;
+      // *(*active + 1) = &cells3D[rightFace][rightRow][rightCol];
    }
 
    if (topRow != -1)
    {
       cells3D[topFace][topRow][topCol].isHovered = highlight;
       cells3D[topFace][topRow][topCol].redraw = 2;
+      // *(*active + 2) = &cells3D[topFace][topRow][topCol];
    }
 
    if (botRow != -1)
    {
       cells3D[bottomFace][botRow][botCol].isHovered = highlight;
       cells3D[bottomFace][botRow][botCol].redraw = 2;
+      // *(*active + 2) = &cells3D[bottomFace][botRow][botCol];
    }
 }
 
@@ -8221,28 +8380,59 @@ void setNeighbours(int face, int row, int col, char val)
       break;
    }
 
-   if (leftRow != -1)
+   if (leftRow != -1 && !extraCtrl.faceDone[leftFace])
    {
       cells3D[leftFace][leftRow][leftCol].occupied = val;
       cells3D[leftFace][leftRow][leftCol].redraw = 2;
+
+      int winner = checkWinner(cells3D[leftFace], val);
+
+      printf("Left done: %d\n", winner);
+      if (extraCtrl.faceDone[leftFace] == 0 && winner != noWinner)
+      {
+         extraCtrl.faceDone[leftFace] = val;
+      }
    }
 
-   if (rightRow != -1)
+   else if (rightRow != -1 && !extraCtrl.faceDone[rightFace])
    {
       cells3D[rightFace][rightRow][rightCol].occupied = val;
       cells3D[rightFace][rightRow][rightCol].redraw = 2;
+
+      int winner = checkWinner(cells3D[rightFace], val);
+      printf("Right done: %d\n", winner);
+      if (extraCtrl.faceDone[rightFace] == 0 && winner != noWinner)
+      {
+         extraCtrl.faceDone[rightFace] = val;
+      }
    }
 
-   if (topRow != -1)
+   if (topRow != -1 && !extraCtrl.faceDone[topFace])
    {
       cells3D[topFace][topRow][topCol].occupied = val;
       cells3D[topFace][topRow][topCol].redraw = 2;
+
+      int winner = checkWinner(cells3D[topFace], val);
+
+      printf("Top done: %d\n", winner);
+      if (extraCtrl.faceDone[topFace] == 0 && winner != noWinner)
+      {
+         extraCtrl.faceDone[topFace] = val;
+      }
    }
 
-   if (botRow != -1)
+   else if (botRow != -1 && !extraCtrl.faceDone[bottomFace])
    {
       cells3D[bottomFace][botRow][botCol].occupied = val;
       cells3D[bottomFace][botRow][botCol].redraw = 2;
+
+      int winner = checkWinner(cells3D[bottomFace], val);
+
+      printf("Bottom done: %d\n", winner);
+      if (extraCtrl.faceDone[bottomFace] == 0 && winner != noWinner)
+      {
+         extraCtrl.faceDone[bottomFace] = val;
+      }
    }
 }
 
@@ -8397,7 +8587,7 @@ int processMouse()
    for (int i = 0; i <= mouseDataIdx; i++)
    {
       struct MouseData mouseDat = mouseData[i];
-      // printf("%x %x %x \n", mouse.byte1, mouse.byte2, mouse.byte3);
+      // printf("%d: %x %x %x \n", i, mouseDat.byte1, mouseDat.byte2, mouseDat.byte3);
       int deltaX = abs((int)mouseDat.byte2) * (1 - ((mouseDat.byte1 & 0x10) != 0) * 2);
       int deltaY = abs((int)mouseDat.byte3) * (1 - ((mouseDat.byte1 & 0x20) != 0) * 2);
 
@@ -8432,18 +8622,27 @@ int processMouse()
 
          mouse.left = 1;
 
-         if (gameState == EXTRA)
+         if (gameState == MODE_3D)
          {
             xRotation -= deltaX * 0.005;
             yRotation += deltaY * 0.005;
+
+            // if (abs(deltaX) > 5 || abs(deltaY) > 5)
             extraCtrl.redraw = 2;
          }
+         // printf("Mouse down\n");
       }
       else if (mouse.left)
       {
-         if (abs(mouse.xTravel) < 10 && abs(mouse.yTravel) < 10)
+         if (abs(mouse.xTravel) < 10 && abs(mouse.yTravel) < 10) {
             mouse.wasLeft = 1;
+
+            if (gameState == MODE_3D) {
+               extraCtrl.redraw = 2;
+            }
+         }
          mouse.left = 0;
+         // printf("Mouse was down\n");
       }
 
       if ((mouseDat.byte1 & 0b10) != 0)
@@ -8451,7 +8650,8 @@ int processMouse()
          mouse.right = 1;
          // printf("Y Rotation: %lf\n", (yRotation * 180) / acos(-1));
          // printf("X Rotation: %lf\n", (xRotation * 180) / acos(-1));
-         printf("Mouse travel (%d, %d)\n", mouse.xTravel, mouse.yTravel);
+         // printf("Mouse travel (%d, %d)\n", mouse.xTravel, mouse.yTravel);
+         // printf("Mouse travel (%d, %d)\n", mouse.xTravel, mouse.yTravel);
       }
 
       if ((mouse.byte1 & 0b100) != 0)
@@ -8459,6 +8659,8 @@ int processMouse()
    }
 
    mouseDataIdx = -1;
+   // clearMouseFIFO();
+   // mouse.packetsRecieved = 0;
    __builtin_wrctl(0, 1); // Enable interrupts after reading angles
    return 0;
 }
@@ -8467,37 +8669,65 @@ void storePS2Data()
 {
    int data = ps2->data;
 
-   mouse.packetsRecieved++;
-   mouse.byte1 = mouse.byte2;
-   mouse.byte2 = mouse.byte3;
-   mouse.byte3 = data & 0xff;
    if (mouse.inInit)
    {
+      mouse.byte1 = mouse.byte2;
+      mouse.byte2 = mouse.byte3;
+      mouse.byte3 = data & 0xff;
       printf("%x %x %x \n", mouse.byte1, mouse.byte2, mouse.byte3);
 
-      if (mouse.byte2 == (char)0xAA)
+      if (mouse.byte2 == (char)0xAA)//  && mouse.byte3 == (char)0x00)
       { // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
          ps2->data = 0xf4;
          mouse.inInit = 0;
          printf("Mouse init complete");
          // mouse.byte3 = ps2->data;
          mouse.packetsRecieved = 0;
-         return;
+      }
+      return;  
+   }
+
+   if (!(data & 0x8000))// || (char)(data & 0xff) == (char)0xfa)
+      return 0;
+
+   // if (mouse.packetsRecieved == 0 && (data & 0xff) & 0x8 != 1)
+   //    return;
+
+   if (mouseDataIdx < 999) {
+      mouse.packetsRecieved++;
+      switch (mouse.packetsRecieved) {
+         case 1:
+            // mouseData[mouseDataIdx+1].byte1 = data & 0xff;
+            mouse.byte1 = data & 0xff;
+            break;
+         case 2:
+            // mouseData[mouseDataIdx+1].byte2 = data & 0xff;
+            mouse.byte2 = data & 0xff;
+            break;
+         case 3:
+            // mouseData[mouseDataIdx+1].byte3 = data & 0xff;
+            mouse.byte3 = data & 0xff;
+         break;
       }
    }
 
-   if (!(data & 0x8000)) // || (char)(data & 0xff) == (char)0xfa)
-      return 0;
+   // printf("%d: %d - %x\n", mouseDataIdx+1, mouse.packetsRecieved,  data & 0xff);
 
-   if (mouse.packetsRecieved != 3)
-      return;
+   if (mouse.packetsRecieved == 3) {
+      mouse.packetsRecieved = 0;
+      mouseDataIdx++;
 
-   mouseData[++mouseDataIdx].byte1 = mouse.byte1;
-   mouseData[mouseDataIdx].byte2 = mouse.byte2;
-   mouseData[mouseDataIdx].byte3 = mouse.byte3;
+      mouseData[mouseDataIdx].byte1 = mouse.byte1;
+      mouseData[mouseDataIdx].byte2 = mouse.byte2;
+      mouseData[mouseDataIdx].byte3 = mouse.byte3;
 
-   mouse.packetsRecieved = 0;
-   mouse.byte1 = mouse.byte2 = mouse.byte3 = 0;
+      mouse.byte1 = mouse.byte2 = mouse.byte3 = 0;
+   } 
+   
+   
+   // mouseDataIdx++;
+   // mouse.packetsRecieved = 0;
+   // mouse.byte1 = mouse.byte2 = mouse.byte3 = 0;
 }
 
 void resetMouse()
