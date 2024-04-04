@@ -8790,8 +8790,8 @@ void storePS2Data()
       }
       return;
    } 
-   if (mouse.packetsRecieved == 0)//UNCOMMENT WHEN RUNNING ON DE1-SOC && (char)(data&0xff) == (char)0xfa)
-      return; 
+   //UNCOMMENT WHEN RUNNING ON DE1-SOCif (mouse.packetsRecieved == 0 && (char)(data&0xff) == (char)0xfa)
+      // return; 
 
 
    // if (mouse.packetsRecieved == 0 && (data & 0xff) & 0x8 != 1)
