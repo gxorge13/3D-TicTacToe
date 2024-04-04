@@ -6508,6 +6508,8 @@ struct DMA
 };
 
 volatile struct DMA *dma = (struct DMA *)0xff203020;
+volatile char *charBase = (char*)0x09000000;
+
 int buff = 0;
 
 struct ps2
@@ -6543,6 +6545,13 @@ float clamp(int d, int min, int max)
    return t > max ? max : t;
 }
 ////////////////////////////////////////////////////////////////////////
+enum TextAlign
+{
+   LEFT,
+   RIGHT,
+   CENTER
+};
+
 void clear_screen();
 void plot_pixel(int x, int y, short int line_color);
 void clear_pixel(int x, int y, short int line_color);
@@ -6551,6 +6560,7 @@ void draw_square(Point p, int width, int height, short clr);
 void draw_line(Point p0, Point p1, int short clr);
 void draw_circle(Point p, int r, short clr);
 void draw_image(Point p, const short *image, int cx, int cy, int width, int height);
+void writeText(int x, int y, char *text, int size, enum TextAlign align);
 
 void wait_vsync();
 ////////////////////////////////////////////////////////////////////////
@@ -6633,7 +6643,8 @@ struct EXTRA_CTRL
    char drawOrder[6];
    float xRot, yRot;
    char faceDone[6];
-} extraCtrl = {2, {0, 1, 2, 3, 4, 5}, 0, 0, {0, 0, 0, 0, 0, 0}};
+   char redWins, blueWins;
+} extraCtrl = {3, {0, 1, 2, 3, 4, 5}, 0, 0, {0, 0, 0, 0, 0, 0}, 0, 0};
 
 Point projectToScreen(Point p);
 Point rotatePoint(Point p, float yaw, float roll, float pitch);
@@ -6765,6 +6776,7 @@ void initState()
 
    buff = buffT;
 
+   memset(charBase, '\0', 80*60);
    savePixels = 0;
    newState();
    wait_vsync();
@@ -6975,7 +6987,7 @@ void updateState()
       // if (extraCtrl.redraw)
       // {
 
-      if (mouse.left || extraCtrl.redraw == 2)
+      if (mouse.left || extraCtrl.redraw == 3)
       {
          extraCtrl.xRot = xRotation;
          extraCtrl.yRot = yRotation;
@@ -7087,7 +7099,7 @@ void updateState()
                struct cell *cell = &cells3D[extraCtrl.drawOrder[f]][r][c]; //
                short clr = cells_color[extraCtrl.drawOrder[f]];
 
-               if (extraCtrl.redraw == 2)
+               if (extraCtrl.redraw == 3)
                {
                   Point points[4] = {
                       {cell->center.x - cell->width / 2, cell->center.y - cell->height / 2, cell->center.z},
@@ -7175,7 +7187,12 @@ void updateState()
 
                         if (extraCtrl.faceDone[extraCtrl.drawOrder[f]] == 0 && winner != noWinner)
                         {
-                           extraCtrl.faceDone[extraCtrl.drawOrder[f]] = cell->occupied;
+                           if (winner == redWinner)
+                              extraCtrl.redWins++;
+                           else if (winner == blueWinner)
+                              extraCtrl.blueWins++;
+
+                           extraCtrl.faceDone[extraCtrl.drawOrder[f]] = winner;
                         }
                      }
                   }
@@ -7188,59 +7205,59 @@ void updateState()
 
                if (cell->redraw > 0 || extraCtrl.redraw > 0)
                {
-               // if (extraCtrl.redraw > 0)
-               // {
+                  // if (extraCtrl.redraw > 0)
+                  // {
                   short clr = cell->clr;
 
                   if (cell->mappedPoints[1].x - cell->mappedPoints[0].x != 0 && cell->mappedPoints[2].x - cell->mappedPoints[3].x != 0)
                   {
                      if (cell->occupied != '-' && extraCtrl.redraw && !mouse.left)
                      {
-                       /* for (int y = minY; y <= maxY; y++)
-                        {
-                           // Check left side
-                           for (int x = (minX + maxX) / 2; x > minX; x--)
-                           {
-                              int i, j;
-                              char found = 0;
-                              for (i = 0, j = 3; i < 4; j = i++)
-                              {
-                                 if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
-                                     (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
-                                    found = !found;
-                              }
+                        /* for (int y = minY; y <= maxY; y++)
+                         {
+                            // Check left side
+                            for (int x = (minX + maxX) / 2; x > minX; x--)
+                            {
+                               int i, j;
+                               char found = 0;
+                               for (i = 0, j = 3; i < 4; j = i++)
+                               {
+                                  if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
+                                      (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
+                                     found = !found;
+                               }
 
-                              // If miss, then all other points will also miss
-                              if (!found)
-                                 break;
-                              plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
-                           }
+                               // If miss, then all other points will also miss
+                               if (!found)
+                                  break;
+                               plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                            }
 
-                           // Check right side
-                           for (int x = (minX + maxX) / 2; x < maxX; x++)
-                           {
-                              int i, j;
-                              char found = 0;
-                              for (i = 0, j = 3; i < 4; j = i++)
-                              {
-                                 if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
-                                     (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
-                                    found = !found;
-                              }
+                            // Check right side
+                            for (int x = (minX + maxX) / 2; x < maxX; x++)
+                            {
+                               int i, j;
+                               char found = 0;
+                               for (i = 0, j = 3; i < 4; j = i++)
+                               {
+                                  if (((cell->mappedPoints[i].y > y) != (cell->mappedPoints[j].y > y)) &&
+                                      (x < (cell->mappedPoints[j].x - cell->mappedPoints[i].x) * (y - cell->mappedPoints[i].y) / (cell->mappedPoints[j].y - cell->mappedPoints[i].y) + cell->mappedPoints[i].x))
+                                     found = !found;
+                               }
 
-                              // If miss, then all other points will also miss
-                              if (!found)
-                                 break;
-                              plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
-                           }
-                        }
-                        */
+                               // If miss, then all other points will also miss
+                               if (!found)
+                                  break;
+                               plot_pixel(x, y, cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                            }
+                         }
+                         */
 
-                       draw_line(cell->mappedPoints[0], cell->mappedPoints[2], cell->occupied == 'x' ? 0xa903 : 0x1b95);
-                       draw_line(cell->mappedPoints[1], cell->mappedPoints[3], cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                        draw_line(cell->mappedPoints[0], cell->mappedPoints[2], cell->occupied == 'x' ? 0xa903 : 0x1b95);
+                        draw_line(cell->mappedPoints[1], cell->mappedPoints[3], cell->occupied == 'x' ? 0xa903 : 0x1b95);
                      }
                   }
-               // }
+                  // }
 
                   for (int i = 1; i <= 4; i++)
                   {
@@ -7271,7 +7288,12 @@ void updateState()
                      }
                      else
                      {
-                        lclr = extraCtrl.faceDone[extraCtrl.drawOrder[f]] == 'x' ? 0xa903 : 0x1b95;
+                        lclr = 0x000;
+
+                        if (extraCtrl.faceDone[extraCtrl.drawOrder[f]] == redWinner)
+                           lclr = 0xf900;//0xa903;
+                        else if (extraCtrl.faceDone[extraCtrl.drawOrder[f]] == blueWinner)
+                           lclr = 0x019f;//0x1b95;
                      }
 
                      draw_line(cell->mappedPoints[(i - 1) % 4], cell->mappedPoints[i % 4], lclr);
@@ -7325,8 +7347,30 @@ void updateState()
                }
             }
             */
-      if (extraCtrl.redraw && !mouse.left)
+      if (extraCtrl.redraw && !mouse.left) {
+         memset(charBase, '\0', 80*60);
          extraCtrl.redraw--;
+         char textOut[2] = "t\0";
+         textOut[0] = (char)extraCtrl.redWins + '0';
+         enum TextAlign align = LEFT;
+
+         writeText(5, 5, textOut, 2, align);
+         textOut[0] = (char)extraCtrl.blueWins + '0';
+         align = RIGHT;
+
+         writeText(75, 5, textOut, 2, align);
+
+         align = CENTER;
+         if (turn == 'x') {
+            char turnText[12] = "Red's turn!\0";
+         
+            writeText(40, 2, turnText, 11, align);
+         } else {
+            char turnText[13] = "Blue's turn!\0";
+         
+            writeText(40, 2, turnText, 12, align);
+         }
+      }
       break;
    case TWO_PLAYER:
       // Clear buffer of old plot
@@ -7490,15 +7534,17 @@ int checkWinner(struct cell grid[3][3], char val)
 
    char posDiag = 1, negDiag = 1;
 
-   for (int i = 0; i < 3; i++) {
+   for (int i = 0; i < 3; i++)
+   {
       if (grid[i][i].occupied != val)
          negDiag = 0;
 
-      if (grid[2-i][i].occupied != val)
+      if (grid[2 - i][i].occupied != val)
          posDiag = 0;
    }
 
-   if (posDiag || negDiag) {
+   if (posDiag || negDiag)
+   {
       winnerState = winner;
       return winner;
    }
@@ -7885,13 +7931,6 @@ void placePieceID(int face, struct cell grid[3][3], struct cell *cell)
    cell->occupied = turn;
 
    cell->redraw = 2;
-
-   int winner = checkWinner(grid, turn);
-
-   if (gameState == MODE_3D && winner != noWinner)
-   {
-      extraCtrl.faceDone[face] = turn;
-   }
 
    if (turn == 'x')
       turn = 'o';
@@ -8392,7 +8431,12 @@ void setNeighbours(int face, int row, int col, char val)
       printf("Left done: %d\n", winner);
       if (extraCtrl.faceDone[leftFace] == 0 && winner != noWinner)
       {
-         extraCtrl.faceDone[leftFace] = val;
+         if (winner == redWinner)
+            extraCtrl.redWins++;
+         else if (winner == blueWinner)
+            extraCtrl.blueWins++;
+
+         extraCtrl.faceDone[leftFace] = winner;
       }
    }
 
@@ -8405,7 +8449,12 @@ void setNeighbours(int face, int row, int col, char val)
       printf("Right done: %d\n", winner);
       if (extraCtrl.faceDone[rightFace] == 0 && winner != noWinner)
       {
-         extraCtrl.faceDone[rightFace] = val;
+         if (winner == redWinner)
+            extraCtrl.redWins++;
+         else if (winner == blueWinner)
+            extraCtrl.blueWins++;
+
+         extraCtrl.faceDone[rightFace] = winner;
       }
    }
 
@@ -8419,7 +8468,12 @@ void setNeighbours(int face, int row, int col, char val)
       printf("Top done: %d\n", winner);
       if (extraCtrl.faceDone[topFace] == 0 && winner != noWinner)
       {
-         extraCtrl.faceDone[topFace] = val;
+         if (winner == redWinner)
+            extraCtrl.redWins++;
+         else if (winner == blueWinner)
+            extraCtrl.blueWins++;
+
+         extraCtrl.faceDone[topFace] = winner;
       }
    }
 
@@ -8433,7 +8487,12 @@ void setNeighbours(int face, int row, int col, char val)
       printf("Bottom done: %d\n", winner);
       if (extraCtrl.faceDone[bottomFace] == 0 && winner != noWinner)
       {
-         extraCtrl.faceDone[bottomFace] = val;
+         if (winner == redWinner)
+            extraCtrl.redWins++;
+         else if (winner == blueWinner)
+            extraCtrl.blueWins++;
+
+         extraCtrl.faceDone[bottomFace] = winner;
       }
    }
 }
@@ -8459,6 +8518,26 @@ Point rotateAboutAxis(Point p, Point rotationAxis, float angle)
    // printf ("(%f, %f, %f) -> (%f, %f, %f)\n", p.x, p.y, p.z, newP.x, newP.y, newP.z);
 
    return newP;
+}
+
+void writeText(int x, int y, char *text, int size, enum TextAlign align)
+{
+
+   if (x < 0 || x >= 80 || y < 0 || y >= 60)
+      return;
+
+   if (align == RIGHT)
+      x -= size;
+   else if (align == CENTER)
+      x -= size / 2;
+
+   int offset = (y << 7) + x;
+   while (*text)
+   {
+      *(charBase + offset) = *text;
+      text++;
+      offset++;
+   }
 }
 
 //////////////////////// Interuptions ///////////////////////
@@ -8630,17 +8709,19 @@ int processMouse()
             yRotation += deltaY * 0.005;
 
             // if (abs(deltaX) > 5 || abs(deltaY) > 5)
-            extraCtrl.redraw = 2;
+            extraCtrl.redraw = 3;
          }
          // printf("Mouse down\n");
       }
       else if (mouse.left)
       {
-         if (abs(mouse.xTravel) < 10 && abs(mouse.yTravel) < 10) {
+         if (abs(mouse.xTravel) < 10 && abs(mouse.yTravel) < 10)
+         {
             mouse.wasLeft = 1;
 
-            if (gameState == MODE_3D) {
-               extraCtrl.redraw = 2;
+            if (gameState == MODE_3D)
+            {
+               extraCtrl.redraw = 3;
             }
          }
          mouse.left = 0;
@@ -8678,44 +8759,47 @@ void storePS2Data()
       mouse.byte3 = data & 0xff;
       printf("%x %x %x \n", mouse.byte1, mouse.byte2, mouse.byte3);
 
-      if (mouse.byte2 == (char)0xAA)//  && mouse.byte3 == (char)0x00)
-      { // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
+      if (mouse.byte2 == (char)0xAA) //  && mouse.byte3 == (char)0x00)
+      {                              // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
          ps2->data = 0xf4;
          mouse.inInit = 0;
          printf("Mouse init complete");
          // mouse.byte3 = ps2->data;
          mouse.packetsRecieved = 0;
       }
-      return;  
+      return;
    }
 
-   if (!(data & 0x8000))// || (char)(data & 0xff) == (char)0xfa)
+   if (!(data & 0x8000)) // || (char)(data & 0xff) == (char)0xfa)
       return 0;
 
    // if (mouse.packetsRecieved == 0 && (data & 0xff) & 0x8 != 1)
    //    return;
 
-   if (mouseDataIdx < 999) {
+   if (mouseDataIdx < 999)
+   {
       mouse.packetsRecieved++;
-      switch (mouse.packetsRecieved) {
-         case 1:
-            // mouseData[mouseDataIdx+1].byte1 = data & 0xff;
-            mouse.byte1 = data & 0xff;
-            break;
-         case 2:
-            // mouseData[mouseDataIdx+1].byte2 = data & 0xff;
-            mouse.byte2 = data & 0xff;
-            break;
-         case 3:
-            // mouseData[mouseDataIdx+1].byte3 = data & 0xff;
-            mouse.byte3 = data & 0xff;
+      switch (mouse.packetsRecieved)
+      {
+      case 1:
+         // mouseData[mouseDataIdx+1].byte1 = data & 0xff;
+         mouse.byte1 = data & 0xff;
+         break;
+      case 2:
+         // mouseData[mouseDataIdx+1].byte2 = data & 0xff;
+         mouse.byte2 = data & 0xff;
+         break;
+      case 3:
+         // mouseData[mouseDataIdx+1].byte3 = data & 0xff;
+         mouse.byte3 = data & 0xff;
          break;
       }
    }
 
    // printf("%d: %d - %x\n", mouseDataIdx+1, mouse.packetsRecieved,  data & 0xff);
 
-   if (mouse.packetsRecieved == 3) {
+   if (mouse.packetsRecieved == 3)
+   {
       mouse.packetsRecieved = 0;
       mouseDataIdx++;
 
@@ -8724,9 +8808,8 @@ void storePS2Data()
       mouseData[mouseDataIdx].byte3 = mouse.byte3;
 
       mouse.byte1 = mouse.byte2 = mouse.byte3 = 0;
-   } 
-   
-   
+   }
+
    // mouseDataIdx++;
    // mouse.packetsRecieved = 0;
    // mouse.byte1 = mouse.byte2 = mouse.byte3 = 0;
