@@ -6722,15 +6722,6 @@ int main(void)
 
       // See function for detail
       updateState();
-
-      // Draws mouse to screen
-      savePixels = 1;
-      draw_circle(mouse.position, 5, 0xffff);
-
-      // Outputs sound in buffer
-      outputSounds();
-
-      displayEnd();
       if (winnerState == redWinner)
       {
          printf("red wins\n");
@@ -6746,6 +6737,15 @@ int main(void)
          printf("tie\n");
          winnerState = noWinner;
       }
+      // Draws mouse to screen
+      savePixels = 1;
+      draw_circle(mouse.position, 5, 0xffff);
+
+      // Outputs sound in buffer
+      outputSounds();
+
+      // displayEnd();
+      
 
       // Chnage buffer
       if (buff == 1)
@@ -7480,7 +7480,7 @@ int checkWinner(struct cell grid[3][3], char val)
    // finds which box was placed
    //  int c = (x - CELLS_X_START) / 50;
    //  int r = (y - CELLS_Y_START) / 50;
-
+   printf("entered checkwinner");
    int winner = blueWinner;
    if (val == 'x')
    {
@@ -7547,7 +7547,7 @@ int checkWinner(struct cell grid[3][3], char val)
       if (grid[i][i].occupied != val)
          negDiag = 0;
 
-      if (grid[2 - i][i].occupied != val)
+      if (grid[2 - i][i].occupied != val) //2, 0 - 1, 1 - 0, 2
          posDiag = 0;
    }
 
