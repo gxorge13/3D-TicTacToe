@@ -6493,9 +6493,9 @@ int cells_z[] = {0, 0, 0, 0, 0, 0};
 //     0xffff};
 short cells_color[] = {0x9c0e, 0x9c0e, 0x9c0e, 0x9c0e, 0x9c0e, 0x9c0e};
 
-struct cell cells_normal[3][3];
+struct cell cells_normal[3][3]; //cells for 2D mode
 
-char turn = 'x';
+char turn = 'x'; //x starts
 
 short int clr = 0x9327;
 
@@ -6576,7 +6576,7 @@ enum WinnerState
 
 enum WinnerState winnerState = noWinner;
 
-void displayEnd();
+// void displayEnd();
 ////////////////////////////////////////////////////////////////////////
 // Mouse data
 void initMouse();
@@ -6785,7 +6785,7 @@ void initState()
    wait_vsync(); // draw on both buffers
 }
 
-// based on "gamestate", draws the background image
+// based on "gamestate", draws the background image and initializes all values
 void newState()
 {
    Point c = {320 / 2, 240 / 2};
@@ -6871,6 +6871,10 @@ void newState()
    }
 }
 
+//draws buttons (including if hovered)
+//figures out if a mode was clicked when on start screen
+//draws rotations of 3D cube
+//allows for piece to be placed 
 void updateState()
 {
    switch (gameState)
@@ -6981,12 +6985,9 @@ void updateState()
 
       savePixels = 1;
       break;
-   case MODE_3D:
+   case MODE_3D: //figures out the rotations using magic
       savePixels = 0;
       int numFaces = 6;
-
-      // if (extraCtrl.redraw)
-      // {
 
       if (mouse.left || extraCtrl.redraw == 3)
       {
@@ -7379,8 +7380,8 @@ void updateState()
 
       // Read mouse data
       if (mouse.wasLeft)
-      {
-         placePiece();
+      { //calls placePiece which also figures out if its a valid placement
+         placePiece(); 
       }
    default:
       break;
@@ -7606,21 +7607,23 @@ void displayEnd()
    // create a system that can go between different modes (from main to end to main again etc)
 }
 
+//places piece by checking bounds first
 void placePiece()
-{
+{  //gets current click
    int x = mouse.position.x;
    int y = mouse.position.y;
 
    if (x < CELLS_X_START || x > CELLS_X_END ||
        y < CELLS_Y_START || y > CELLS_Y_END)
-      return;
+      return; //if not in range
 
    int c = (x - CELLS_X_START) / 50;
    int r = (y - CELLS_Y_START) / 50;
-
+   //if the curr box already filled.
    if (cells_normal[r][c].occupied != '-')
       return;
-
+   int winner = checkWinner(cells_normal, turn); //wont need int as the function changes a global variable 
+   
    placePieceID(0, cells_normal, &cells_normal[r][c]);
 }
 
@@ -7940,6 +7943,7 @@ Point mapPoint(Point p, float yaw, float roll, float pitch)
    return projected;
 }
 
+//flips turn and outputs sound
 void placePieceID(int face, struct cell grid[3][3], struct cell *cell)
 {
    cell->occupied = turn;
