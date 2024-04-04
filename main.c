@@ -6746,6 +6746,7 @@ int main(void)
    }
 }
 
+// initializes and ensures everything is safe to use
 void initState()
 {
    resetMouse();
@@ -6769,9 +6770,10 @@ void initState()
    wait_vsync();
 
    newState();
-   wait_vsync();
+   wait_vsync(); // draw on both buffers
 }
 
+// based on "gamestate",
 void newState()
 {
    Point c = {320 / 2, 240 / 2};
