@@ -6776,7 +6776,7 @@ void initState()
 
    buff = buffT;
 
-   memset(charBase, '\0', 80*60);
+   memset((void*)charBase, '\0', 80*60*sizeof(char));
    savePixels = 0;
    newState();
    wait_vsync();
@@ -7118,7 +7118,7 @@ void updateState()
                      Point vecToOrigin = relToOrigin(points[i]);
                      Point xRotated = rotateAboutAxis(vecToOrigin, verticalAxis, extraCtrl.xRot + cell->xRotation);
                      Point yRotated = rotateAboutAxis(xRotated, horiAxis, extraCtrl.yRot + cell->yRotation);
-                     Point reMapped = {yRotated.x + origin.x, yRotated.y + origin.y, yRotated.z + origin.z};
+                     Point reMapped = {(yRotated.x)*(1-0.0005*(yRotated.z)) + origin.x, yRotated.y*(1-0.0005*(yRotated.z)) + origin.y, yRotated.z + origin.z};
                      cell->mappedPoints[i] = reMapped;
                   }
                }
@@ -7349,7 +7349,7 @@ void updateState()
             }
             */
       if (extraCtrl.redraw && !mouse.left) {
-         memset(charBase, '\0', 80*60);
+         memset((void*)charBase, '\0', 80*60*sizeof(char));
          extraCtrl.redraw--;
          char textOut[2] = "t\0";
          textOut[0] = (char)extraCtrl.redWins + '0';
@@ -8706,8 +8706,8 @@ int processMouse()
 
          if (gameState == MODE_3D)
          {
-            xRotation -= deltaX * 0.005;
-            yRotation += deltaY * 0.005;
+            xRotation -= (deltaX * 0.005);
+            yRotation += (deltaY * 0.005);
 
             // if (abs(deltaX) > 5 || abs(deltaY) > 5)
             extraCtrl.redraw = 3;
@@ -8753,6 +8753,9 @@ void storePS2Data()
 {
    int data = ps2->data;
 
+   // UNCOMMENT WHEN RUNNING ON DE1-SOC
+   // if (!(data & 0x8000)) // || (char)(data & 0xff) == (char)0xfa)
+   //    return 0;
    if (mouse.inInit)
    {
       mouse.byte1 = mouse.byte2;
@@ -8760,7 +8763,7 @@ void storePS2Data()
       mouse.byte3 = data & 0xff;
       printf("%x %x %x \n", mouse.byte1, mouse.byte2, mouse.byte3);
 
-      if (mouse.byte2 == (char)0xAA) //  && mouse.byte3 == (char)0x00)
+      if (mouse.byte2 == (char)0xAA  && mouse.byte3 == (char)0x00)
       {                              // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
          ps2->data = 0xf4;
          mouse.inInit = 0;
@@ -8769,40 +8772,42 @@ void storePS2Data()
          mouse.packetsRecieved = 0;
       }
       return;
-   }
+   } 
+   if (mouse.packetsRecieved == 0)//UNCOMMENT WHEN RUNNING ON DE1-SOC && (char)(data&0xff) == (char)0xfa)
+      return; 
 
-   if (!(data & 0x8000)) // || (char)(data & 0xff) == (char)0xfa)
-      return 0;
 
    // if (mouse.packetsRecieved == 0 && (data & 0xff) & 0x8 != 1)
    //    return;
 
-   if (mouseDataIdx < 999)
+
+   mouse.packetsRecieved++;
+   switch (mouse.packetsRecieved)
    {
-      mouse.packetsRecieved++;
-      switch (mouse.packetsRecieved)
-      {
-      case 1:
-         // mouseData[mouseDataIdx+1].byte1 = data & 0xff;
-         mouse.byte1 = data & 0xff;
-         break;
-      case 2:
-         // mouseData[mouseDataIdx+1].byte2 = data & 0xff;
-         mouse.byte2 = data & 0xff;
-         break;
-      case 3:
-         // mouseData[mouseDataIdx+1].byte3 = data & 0xff;
-         mouse.byte3 = data & 0xff;
-         break;
-      }
+   case 1:
+      // mouseData[mouseDataIdx+1].byte1 = data & 0xff;
+      mouse.byte1 = data & 0xff;
+      break;
+   case 2:
+      // mouseData[mouseDataIdx+1].byte2 = data & 0xff;
+      mouse.byte2 = data & 0xff;
+      break;
+   case 3:
+      // mouseData[mouseDataIdx+1].byte3 = data & 0xff;
+      mouse.byte3 = data & 0xff;
+      break;
    }
 
-   // printf("%d: %d - %x\n", mouseDataIdx+1, mouse.packetsRecieved,  data & 0xff);
 
+   // printf("%d: %d - %x\n", mouseDataIdx+1, mouse.packetsRecieved,  data & 0xff);
+   
    if (mouse.packetsRecieved == 3)
    {
       mouse.packetsRecieved = 0;
       mouseDataIdx++;
+
+      if (mouseDataIdx >= 1000)
+         mouseDataIdx = 999;
 
       mouseData[mouseDataIdx].byte1 = mouse.byte1;
       mouseData[mouseDataIdx].byte2 = mouse.byte2;
