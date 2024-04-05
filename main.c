@@ -6565,6 +6565,7 @@ void writeText(int x, int y, char *text, int size, enum TextAlign align);
 void wait_vsync();
 ////////////////////////////////////////////////////////////////////////
 // Winning Conditions
+void checkPlaced();
 int checkWinner(struct cell grid[3][3], char val);
 enum WinnerState
 {
@@ -7471,7 +7472,70 @@ void draw_cells()
       }
    }
 }
+void checkPlaced(){
+   int x = mouse.position.x;
+   int y = mouse.position.y;
 
+   // finds which box was placed
+    int c = (x - CELLS_X_START) / 50;
+    int r = (y - CELLS_Y_START) / 50;
+
+    int winner = blueWinner;
+   if (turn == 'x')
+   {
+      winner = redWinner;
+   }
+
+   // Check row or collumn // used for which piece was placed
+   if ((cells_normal[r][(c + 1) % 3].occupied == turn &&
+        cells_normal[r][(c + 2) % 3].occupied == turn &&
+        cells_normal[r][(c + 3) % 3].occupied == turn) ||
+
+       (cells_normal[(r + 1) % 3][c].occupied == turn &&
+        cells_normal[(r + 2) % 3][c].occupied == turn &&
+        cells_normal[(r + 3) % 3][c].occupied == turn))
+   {
+      winnerState = winner;
+   }
+
+      // // Check either diagonal
+   if ((r == c && //ex 0 , 0
+        cells_normal[(r) % 3][(c) % 3].occupied == turn         && // 0, 0
+        cells_normal[(r + 1) % 3][(c + 1) % 3].occupied == turn && // 1, 1
+        cells_normal[(r + 2) % 3][(c + 2) % 3].occupied == turn) ||// 2, 2
+       // checks top left to bottom right
+
+       (/*r + c == 2 &&*/ //ex: 2 , 0
+        cells_normal[(r + 1) % 3][(c + 2) % 3].occupied == turn && // 0, 2
+        cells_normal[(r + 2) % 3][(c + 1) % 3].occupied == turn && // 1, 1
+        cells_normal[(r) % 3][(c) % 3].occupied == turn)) //2, 0
+   // checks top right to bottom left
+   {
+      winnerState = winner;
+   }
+
+   // if no winner, check tie
+   int isTie = 1;
+   for (int i = 0; i < 3 && isTie; i++, printf("\n"))
+   {
+      for (int j = 0; j < 3; j++)
+      {
+         // printf("%c ", cells_normal[i][j].occupied);
+         if (cells_normal[i][j].occupied == '-')
+         { // if any are empty, no tie
+            isTie = 0;
+            break;
+         }
+      }
+   }
+
+   if (isTie)
+   {
+      winnerState = tie;
+   }
+
+   winnerState = noWinner;
+}
 int checkWinner(struct cell grid[3][3], char val)
 {
    int x = mouse.position.x;
@@ -7622,7 +7686,7 @@ void placePiece()
    //if the curr box already filled.
    if (cells_normal[r][c].occupied != '-')
       return;
-   int winner = checkWinner(cells_normal, turn); //wont need int as the function changes a global variable 
+   checkPlaced(); //checks the box that was just placed
    
    placePieceID(0, cells_normal, &cells_normal[r][c]);
 }

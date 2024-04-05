@@ -8,10 +8,10 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/mimo2/OneDrive/Desktop/UofT/Yr_2/Winter/ECE243/proj/TicTacToe",
-      "program": "c:/Users/mimo2/OneDrive/Desktop/UofT/Yr_2/Winter/ECE243/proj/TicTacToe/build/Debug/outDebug",
+      "cwd": "c:/Users/georg/OneDrive/Desktop/School/2nd - Winter/ECE243 - Computer Organization/TicTacToe",
+      "program": "c:/Users/georg/OneDrive/Desktop/School/2nd - Winter/ECE243 - Computer Organization/TicTacToe/build/Debug/outDebug",
       "MIMode": "gdb",
-      "miDebuggerPath": "gdb",
+      "miDebuggerPath": "C:/msys64/mingw64/bin/gdb.exe",
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",
