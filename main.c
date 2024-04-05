@@ -7472,10 +7472,11 @@ void draw_cells()
       }
    }
 }
+
+//Checks winner based on which box was just clicked
 void checkPlaced(){
    int x = mouse.position.x;
    int y = mouse.position.y;
-
    // finds which box was placed
     int c = (x - CELLS_X_START) / 50;
     int r = (y - CELLS_Y_START) / 50;
@@ -7488,14 +7489,15 @@ void checkPlaced(){
 
    // Check row or collumn // used for which piece was placed
    if ((cells_normal[r][(c + 1) % 3].occupied == turn &&
-        cells_normal[r][(c + 2) % 3].occupied == turn &&
-        cells_normal[r][(c + 3) % 3].occupied == turn) ||
+        cells_normal[r][(c + 2) % 3].occupied == turn
+        /*cells_normal[r][(c + 3) % 3].occupied == turn*/) ||
 
        (cells_normal[(r + 1) % 3][c].occupied == turn &&
-        cells_normal[(r + 2) % 3][c].occupied == turn &&
-        cells_normal[(r + 3) % 3][c].occupied == turn))
+        cells_normal[(r + 2) % 3][c].occupied == turn
+        /*cells_normal[(r + 3) % 3][c].occupied == turn*/))
    {
       winnerState = winner;
+      return;
    }
 
       // // Check either diagonal
@@ -7512,16 +7514,17 @@ void checkPlaced(){
    // checks top right to bottom left
    {
       winnerState = winner;
+      return;
    }
 
    // if no winner, check tie
    int isTie = 1;
-   for (int i = 0; i < 3 && isTie; i++, printf("\n"))
+   for (int i = 0; i < 3 && isTie; i++/*, printf("\n")*/)
    {
       for (int j = 0; j < 3; j++)
       {
          // printf("%c ", cells_normal[i][j].occupied);
-         if (cells_normal[i][j].occupied == '-')
+         if (cells_normal[i][j].occupied == '-') //if any are empty
          { // if any are empty, no tie
             isTie = 0;
             break;
@@ -7533,9 +7536,13 @@ void checkPlaced(){
    {
       winnerState = tie;
    }
-
-   winnerState = noWinner;
+   else{
+      winnerState = noWinner; //final condition, no winner and no tie
+   }
+   
 }
+
+//checks winner based on an input of a grid. Useful for 3D
 int checkWinner(struct cell grid[3][3], char val)
 {
    int x = mouse.position.x;
@@ -7686,7 +7693,6 @@ void placePiece()
    //if the curr box already filled.
    if (cells_normal[r][c].occupied != '-')
       return;
-   checkPlaced(); //checks the box that was just placed
    
    placePieceID(0, cells_normal, &cells_normal[r][c]);
 }
@@ -8014,6 +8020,8 @@ void placePieceID(int face, struct cell grid[3][3], struct cell *cell)
 
    cell->redraw = 2;
 
+   //checkPlaced(); //checks the box that was just placed
+   int winner = checkWinner(cells_normal, turn);
    if (turn == 'x')
       turn = 'o';
    else
