@@ -24,18 +24,22 @@ for clr in pixels:
     colorOut.append(output)
 
 with open("./images_out/" + filename + ".txt", mode='w') as file:
-    strOut = str(colorOut).replace("[", "{\n").replace("]", "\n};\n").replace("\'", "")
-    listOfCommas = [i for i in range(len(strOut)) if strOut[i] == ',']
-    listOfCommas = [listOfCommas[i] for i in range(len(listOfCommas)) if (i > 0 and i % 50 == 0)]
-    offset = 0
+    strOut = ["{", ""]
+    count = 0
+    idx = 1
+    for data in colorOut:
+        strOut[idx] += data + ", "
 
-    for i in listOfCommas:
-        str1 = strOut[:i + offset]
-        str2 = strOut[1 + i + offset:]
-        offset += 1
-        strOut = ",\n".join([str1, str2])
+        if count == 50:
+            count = 0
+            idx += 1
+            strOut.append("")
+        else:
+            count += 1
+
+    strOut.append("};")
 
     print("Writing to file")
-    file.write(strOut)
+    file.write("\n".join(strOut))
     print("Done writing")
     file.close()
