@@ -6960,8 +6960,10 @@ void newState()
    switch (gameState)
    {
    case START:
+      turn = 'x';
       btn_singlePlayer.redraw = 2;
       btn_twoPlayer.redraw = 2;
+      returnToMenu.redraw = 2;
       draw_image(c, start_screen, WIDTH, HEIGHT, WIDTH, HEIGHT);
       break;
    case MODE_3D:
