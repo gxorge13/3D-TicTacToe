@@ -10566,7 +10566,6 @@ void updateState()
    case TWO_PLAYER:
       // Clear buffer of old plot
       
-
       savePixels = 0;
       if (returnToMenu.redraw)
       {
@@ -10809,6 +10808,7 @@ int checkWinner(struct cell grid[3][3], char val)
       {
          winnerState = winner;
          gameState = END;
+         initState();
          return winner;
       }
    }
@@ -10830,6 +10830,7 @@ int checkWinner(struct cell grid[3][3], char val)
       {
          winnerState = winner;
          gameState = END;
+         initState();
          return winner;
       }
    }
@@ -10849,6 +10850,7 @@ int checkWinner(struct cell grid[3][3], char val)
    {
       winnerState = winner;
       gameState = END;
+      initState();
       return winner;
    }
 
@@ -10871,6 +10873,7 @@ int checkWinner(struct cell grid[3][3], char val)
    {
       winnerState = tie;
       gameState = END;
+      initState();
       return tie;
    }
 
