@@ -5,7 +5,7 @@ filename = input("file name: ")
 img = Image.open("./images/" + filename + ".png")
 
 pixels = list(img.getdata())
-
+print(len(pixels))
 colorOut = []
 for clr in pixels:
     output = ""
@@ -22,6 +22,8 @@ for clr in pixels:
             output = "0x" + "".join(["0" for i in range(6 - len(output))]) + output[2:]
 
     colorOut.append(output)
+
+print(len(colorOut))
 
 with open("./images_out/" + filename + ".txt", mode='w') as file:
     strOut = ["{", ""]
