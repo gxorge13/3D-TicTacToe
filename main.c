@@ -7733,6 +7733,7 @@ void initState()
    btn_twoPlayer.redraw = 2;
    returnToMenu.redraw = 2;
    btnRestart.redraw = 2;
+
    resetMouse();
    int buffT = buff;
    buff = 0;
@@ -8642,6 +8643,7 @@ int drawButton32by32(ButtonGUI btn, const short int image[2][1024], enum GameSta
 
 }
 
+//draws the squares and pieces (including animation)
 void draw_cells()
 {
    for (int r = 0; r < 3; r++)
@@ -8655,7 +8657,7 @@ void draw_cells()
              mouse.position.x < cell->offsetx + cell->width &&
              mouse.position.y > cell->offsety &&
              mouse.position.y < cell->offsety + cell->height)
-         {
+         {  //What colour highlight should be used
             clr = cell->occupied != '-' ? 0xce37 : turn == 'x' ? 0xf470
                                                                : 0x7577; // 0xce37;
 
@@ -8671,7 +8673,7 @@ void draw_cells()
             cell->redraw = 2;
          }
 
-         if (cell->redraw)
+         if (cell->redraw) //create an animation by slowly showing more and more of the image
          {
             savePixels = 0;
             draw_square(cell->center, cell->width, cell->height, clr);
@@ -8700,7 +8702,7 @@ void draw_cells()
       }
    }
 
-   for (int r = 0; r < 3; r++)
+   for (int r = 0; r < 3; r++) //draw grid
    {
       for (int c = 0; c < 3; c++)
       {
