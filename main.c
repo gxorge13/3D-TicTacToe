@@ -7372,6 +7372,7 @@ typedef struct buttonGui
    char redraw;
 } ButtonGUI;
 
+
 ButtonGUI btn_singlePlayer = {{WIDTH / 2 - 40, HEIGHT - 40}, 64, 32, 0, 2};
 ButtonGUI btn_twoPlayer = {{WIDTH / 2 + 40, HEIGHT - 40}, 64, 32, 0, 2};
 ButtonGUI returnToMenu = {{WIDTH/2 - 120, HEIGHT/2 - 80}, 32, 32, 0, 2};
@@ -7631,6 +7632,9 @@ ListOfPixels arrListOfPixels[2] = {
     {NULL, NULL, 0},
     {NULL, NULL, 0}};
 ////////////////////////////////////////////////////////////////////
+
+int drawButton32by32(ButtonGUI btn, const short int image[][1024], enum GameStates GSifClkd);
+
 int main(void)
 {
    cells_xRot[0] = cells_xRot[4] = cells_xRot[5] = 0;
@@ -7724,6 +7728,11 @@ int main(void)
 // initializes and ensures everything is safe to use
 void initState()
 {
+   turn = 'x';
+   btn_singlePlayer.redraw = 2;
+   btn_twoPlayer.redraw = 2;
+   returnToMenu.redraw = 2;
+   btnRestart.redraw = 2;
    resetMouse();
    int buffT = buff;
    buff = 0;
@@ -7756,11 +7765,7 @@ void newState()
    switch (gameState)
    {
    case START:
-      turn = 'x';
-      btn_singlePlayer.redraw = 2;
-      btn_twoPlayer.redraw = 2;
-      returnToMenu.redraw = 2;
-      btnRestart.redraw = 2;
+
 
       draw_image(c, start_screen, WIDTH, HEIGHT, WIDTH, HEIGHT);
       break;
@@ -7963,7 +7968,110 @@ void updateState()
    case MODE_3D: //figures out the rotations using magic
       savePixels = 0;
       int numFaces = 6;
+      if (returnToMenu.redraw)
+      {
+         if (returnToMenu.isHovered)
+         {
+            draw_image(
+                returnToMenu.loc,
+                img_return[1],
+                returnToMenu.width,
+                returnToMenu.height,
+                returnToMenu.width,
+                returnToMenu.height);
+                returnToMenu.redraw--;
+         }
+         else
+         {
+            draw_image(
+                returnToMenu.loc,
+                img_return[0],
+                returnToMenu.width,
+                returnToMenu.height,
+                returnToMenu.width,
+                returnToMenu.height);
+                returnToMenu.redraw--;
+         }
+      }
 
+      if (
+          mouse.position.x >= returnToMenu.loc.x - returnToMenu.width / 2 &&
+          mouse.position.x <= returnToMenu.loc.x + returnToMenu.width / 2 &&
+          mouse.position.y >= returnToMenu.loc.y - returnToMenu.height / 2 &&
+          mouse.position.y <= returnToMenu.loc.y + returnToMenu.height / 2)
+      {
+         if (!returnToMenu.isHovered)
+         {
+            returnToMenu.isHovered = 1;
+            returnToMenu.redraw = 2;
+         }
+
+         if (mouse.wasLeft)
+         {
+            gameState = START;
+            initState();
+            return;
+         }
+      }
+      else if (returnToMenu.isHovered)
+      {
+         returnToMenu.isHovered = 0;
+         returnToMenu.redraw = 2;
+      }
+      // savePixels = 1;
+//////////////////////////////////////// for restart btn////////////////////////////////
+      if (btnRestart.redraw)
+      {
+         if (btnRestart.isHovered)
+         {
+            draw_image(
+                btnRestart.loc,
+                restart[1],
+                btnRestart.width,
+                btnRestart.height,
+                btnRestart.width,
+                btnRestart.height);
+            btnRestart.redraw--;
+         }
+         else
+         {
+            draw_image(
+                btnRestart.loc,
+                restart[0],
+                btnRestart.width,
+                btnRestart.height,
+                btnRestart.width,
+                btnRestart.height);
+            btnRestart.redraw--;
+         }
+      }
+
+      if (
+          mouse.position.x >= btnRestart.loc.x - btnRestart.width / 2 &&
+          mouse.position.x <= btnRestart.loc.x + btnRestart.width / 2 &&
+          mouse.position.y >= btnRestart.loc.y - btnRestart.height / 2 &&
+          mouse.position.y <= btnRestart.loc.y + btnRestart.height / 2)
+      {
+         if (!btnRestart.isHovered)
+         {
+            btnRestart.isHovered = 1;
+            btnRestart.redraw = 2;
+         }
+
+         if (mouse.wasLeft)
+         {
+            gameState = MODE_3D;
+            winnerState = noWinner;
+            initState();
+            return;
+         }
+      }
+      else if (btnRestart.isHovered)
+      {
+         btnRestart.isHovered = 0;
+         btnRestart.redraw = 2;
+      }
+      
       if (mouse.left || extraCtrl.redraw == 3)
       {
          extraCtrl.xRot = xRotation;
@@ -8456,6 +8564,7 @@ void updateState()
          btnRestart.isHovered = 0;
          btnRestart.redraw = 2;
       }
+      // if (drawButton32by32(btnRestart, restart, TWO_PLAYER)) return;
 
       Point centreTxt = {WIDTH / 2, HEIGHT / 2 - 40};
 
@@ -8467,7 +8576,7 @@ void updateState()
       
       draw_cells();
       if (mouse.wasLeft && winnerState == noWinner)
-      { //calls placePiece which also figures out if its a valid placement
+      { //Figures out if its a valid placement
          placePiece(); 
       }
    default:
@@ -8475,6 +8584,63 @@ void updateState()
    }
 }
 
+int drawButton32by32(ButtonGUI btn, const short int image[2][1024], enum GameStates GSifClkd){
+
+   if (btn.redraw)
+   {
+      if (btn.isHovered)
+      {
+         draw_image(
+               btn.loc,
+               image[1],
+               btn.width,
+               btn.height,
+               btn.width,
+               btn.height);
+         btn.redraw--;
+      }
+      else
+      {
+         draw_image(
+               btn.loc,
+               image[0],
+               btn.width,
+               btn.height,
+               btn.width,
+               btn.height);
+         btn.redraw--;
+      }
+   }
+
+   if (
+         mouse.position.x >= btn.loc.x - btn.width / 2 &&
+         mouse.position.x <= btn.loc.x + btn.width / 2 &&
+         mouse.position.y >= btn.loc.y - btn.height / 2 &&
+         mouse.position.y <= btn.loc.y + btn.height / 2)
+   {
+      if (!btn.isHovered)
+      {
+         btn.isHovered = 1;
+         btn.redraw = 2;
+      }
+
+      if (mouse.wasLeft)
+      {
+         gameState = GSifClkd;
+         winnerState = noWinner;
+         initState();
+         return 1;
+      }
+   }
+   else if (btn.isHovered)
+   {
+      btn.isHovered = 0;
+      btn.redraw = 2;
+   }
+
+   return 0;
+
+}
 
 void draw_cells()
 {
