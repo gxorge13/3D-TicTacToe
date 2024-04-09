@@ -7960,18 +7960,18 @@ int main(void)
    // xRotation = -acos(-1) / 4.f;
    // yRotation = acos(-1) / 8.f;
 
-   printf("Initial pitch: ");
-   for (int i = 0; i < 4; i++, printf(", "))
-   {
-      printf("%f", cells_xRot[i]);
-   }
+   // printf("Initial pitch: ");
+   // for (int i = 0; i < 4; i++, printf(", "))
+   // {
+   //    printf("%f", cells_xRot[i]);
+   // }
 
-   printf("\n");
+   // printf("\n");
 
    origin.x = WIDTH / 2;
    origin.y = (HEIGHT - 3 * 50) - 20 + 75;
    origin.z = 75;
-   printf("Origin (%f, %f, %f)\n", origin.x, origin.y, origin.z);
+   // printf("Origin (%f, %f, %f)\n", origin.x, origin.y, origin.z);
 
    dma->back_buffer = &Buffer1;
    wait_vsync();
@@ -7991,8 +7991,8 @@ int main(void)
    // Setup initial gamestate
    initState();
    savePixels = 1;
-   printf("Program started: \n");
-   printf("%f, %f\n", mouse.position.x, mouse.position.y);
+   // printf("Program started: \n");
+   // printf("%f, %f\n", mouse.position.x, mouse.position.y);
 
    while (1)
    {
@@ -9250,7 +9250,7 @@ int checkWinner(struct cell grid[3][3], char val)
    {
       for (int j = 0; j < 3; j++)
       {
-         printf("%c ", grid[i][j].occupied);
+         // printf("%c ", grid[i][j].occupied);
          if (grid[i][j].occupied == '-')
          { // if any are empty, no tie
             isTie = 0;
@@ -10444,7 +10444,7 @@ void storePS2Data()
       mouse.byte1 = mouse.byte2;
       mouse.byte2 = mouse.byte3;
       mouse.byte3 = data & 0xff;
-      printf("%x %x %x \n", mouse.byte1, mouse.byte2, mouse.byte3);
+      // printf("%x %x %x \n", mouse.byte1, mouse.byte2, mouse.byte3);
 
       if (mouse.byte2 == (char)0xAA)//UNCOMMENT WHEN RUNNING ON DE1-SOC //  && mouse.byte3 == (char)0x00)
       {                              // && byte3 == (char)0x00){// && (byte3 == (char)0x00)){// && byte3 == (char)0x00) {
