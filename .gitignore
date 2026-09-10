@@ -21,3 +21,9 @@ sounds/Decont_1new.wav
 sounds_out/Cannon_fire.wav.txt
 sounds_out/Decont_1new.wav.txt
 .vscode/c_cpp_properties.json
+
+# Local environments and generated system/cache files
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
